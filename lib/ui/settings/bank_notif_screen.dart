@@ -46,7 +46,9 @@ class _BankNotifScreenState extends State<BankNotifScreen> with WidgetsBindingOb
         return SubPage(
           title: 'Notifiche della banca',
           body: PageBody(children: [
-            Text('Quando Revolut, Fineco o Trade Republic ti mandano una notifica di pagamento, Dollarz la legge e crea il movimento. Il testo resta sul telefono.',
+            Text(
+                'Quando Revolut, Fineco o Trade Republic ti mandano una notifica o un SMS di pagamento, Dollarz lo legge e crea il movimento. '
+                'Degli SMS legge solo quelli delle banche. Il testo resta sul telefono.',
                 style: TS.soft(t)),
             const SizedBox(height: 12),
             SwitchListTile(
@@ -108,7 +110,7 @@ class _BankNotifScreenState extends State<BankNotifScreen> with WidgetsBindingOb
                 padding: const EdgeInsets.all(12),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Row(children: [
-                    StatusPill(bankLabels[bankOf('${m['pkg']}')] ?? '${m['pkg']}', color: TC.accent),
+                    StatusPill(bankLabels[bankOf('${m['pkg']}', '${m['title']}')] ?? '${m['pkg']}', color: TC.accent),
                     const SizedBox(width: 8),
                     Expanded(child: Text(_at(m['at']), style: TS.muted(t, 11.5))),
                   ]),

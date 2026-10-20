@@ -175,6 +175,7 @@ class AppState extends ChangeNotifier {
     String src = 'manual',
     String? importKey,
     bool suggest = true,
+    int? created,
   }) {
     final t = Tx(
       id: newId(),
@@ -186,6 +187,7 @@ class AppState extends ChangeNotifier {
       note: note.trim(),
       src: src,
       importKey: importKey,
+      created: created,
     );
     saveTx(t);
     return t;
@@ -710,10 +712,15 @@ class AppState extends ChangeNotifier {
       final dup = txsOf(acc.id).where((t) {
         if (t.amount != p.amount) return false;
         if (daysBetween(fromKey(t.date), fromKey(p.date)).abs() > 1) return false;
-        return t.src == 'manual' || t.src == 'notif';
+        // scritto a mano prima che arrivasse la notifica
+        if (t.src == 'manual') return true;
+        // notifica dell'app e SMS dello stesso pagamento arrivano a pochi minuti; due caffè uguali in un giorno no
+        return t.src == 'notif' && (t.created - n.at).abs() <= 10 * 60000;
       }).firstOrNull;
       if (dup != null) return 'già registrato (${dup.desc})';
-      addTx(amount: p.amount, accountId: acc.id, catId: p.catHint ?? suggestCat(p.desc, p.amount), desc: p.desc, date: p.date, src: 'notif');
+      // creato all'ora della notifica: conta giusto rispetto al saldo corretto dopo
+      addTx(
+          amount: p.amount, accountId: acc.id, catId: p.catHint ?? suggestCat(p.desc, p.amount), desc: p.desc, date: p.date, src: 'notif', created: n.at);
       matchScheduled();
       return 'movimento creato su ${acc.name}';
     }

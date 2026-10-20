@@ -9,6 +9,7 @@ import 'package:dollarz/data/app_state.dart';
 import 'package:dollarz/data/local_prefs.dart';
 import 'package:dollarz/data/models.dart';
 import 'package:dollarz/data/store.dart';
+import 'package:dollarz/logic/bank_notif.dart';
 import 'package:dollarz/services/bank_bridge.dart';
 import 'package:dollarz/services/lock.dart';
 import 'package:dollarz/services/notifications.dart';
@@ -78,6 +79,31 @@ void main() {
       await app.prefs.flush();
     });
   }
+
+  test('SMS della banca: movimento creato, doppione scartato, due spese uguali tenute', () async {
+    final key = CryptoBox.randomKey();
+    final store = Store();
+    await store.init(dir: dir, key: key);
+    final prefs = LocalPrefs();
+    await prefs.init(dir, key);
+    final app = AppState(store, prefs);
+    app.saveAccount(Account(id: 'f1', name: 'Conto prova', institution: 'fineco', anchorAmount: 100000, anchorDate: addDaysKey(todayKey(), -5)));
+    // formato degli SMS di Fineco, con valori inventati
+    const sms = 'Fineco - SMS Gratuito: Autorizzato utilizzo Carta ***1234 Importo: 3,5 EUR, per: BAR ESEMPIO. Info: 0200000000';
+    BankNotif n(String pkg, int at) => BankNotif(pkg: pkg, title: 'Fineco', text: sms, at: at);
+    final now = DateTime.now().millisecondsSinceEpoch;
+    expect(app.ingestNotif(n('com.google.android.apps.messaging', now - 3600000)), startsWith('movimento creato'));
+    // lo stesso pagamento anche dalla notifica dell'app della banca, un minuto dopo
+    expect(app.ingestNotif(n('it.fineco.app', now - 3540000)), startsWith('già registrato'));
+    // un secondo pagamento uguale, un'ora dopo
+    expect(app.ingestNotif(n('com.google.android.apps.messaging', now)), startsWith('movimento creato'));
+    final txs = app.txsOf('f1').toList();
+    expect(txs.length, 2);
+    expect(txs.every((t) => t.amount == -350 && t.desc == 'BAR ESEMPIO' && t.src == 'notif'), true);
+    expect(app.balance(app.accounts.single), 100000 - 700);
+    await store.flush();
+    await prefs.flush();
+  });
 
   testWidgets('primo avvio', (tester) async {
     final app = await makeApp(tester);

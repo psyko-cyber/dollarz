@@ -5,7 +5,7 @@ import 'package:crypto/crypto.dart';
 
 import '../core/fmt.dart';
 
-/// Lettura delle notifiche push delle banche (Android).
+/// Lettura delle notifiche push e degli SMS delle banche (Android).
 /// Parser euristico: importo, verso, esercente. Quello che non è sicuro finisce
 /// tra i "da confermare" invece di diventare subito un movimento.
 
@@ -34,6 +34,8 @@ class BankNotif {
 
   /// Il testo più completo tra quello breve e quello espanso.
   String get body => big.length > text.length ? big : text;
+
+  String get bank => bankOf(pkg, title);
 
   /// Stessa notifica ripubblicata entro 2 minuti = stesso id.
   String get id => sha1.convert(utf8.encode('$pkg|$title|$body|${at ~/ 120000}')).toString().substring(0, 20);
@@ -86,11 +88,16 @@ class ParsedNotif {
 
 const bankLabels = {'revolut': 'Revolut', 'fineco': 'Fineco', 'traderepublic': 'Trade Republic', 'altro': 'Banca'};
 
-String bankOf(String pkg) {
+/// La banca dal pacchetto dell'app o, per gli SMS (app dei messaggi), dal mittente nel titolo.
+String bankOf(String pkg, [String title = '']) {
   final p = pkg.toLowerCase();
   if (p.contains('revolut')) return 'revolut';
   if (p.contains('fineco')) return 'fineco';
   if (p.contains('traderepublic') || p.contains('trade_republic') || p.contains('trade.republic')) return 'traderepublic';
+  final sender = title.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+  if (sender.startsWith('fineco')) return 'fineco';
+  if (sender.startsWith('revolut')) return 'revolut';
+  if (sender.startsWith('traderepub')) return 'traderepublic';
   return 'altro';
 }
 
@@ -124,9 +131,12 @@ const _topup = ['hai aggiunto', 'aggiunti', 'added', 'ricarica', 'top up', 'top-
 const _expense = [
   'pagat', 'paid', 'pagamento', 'payment', 'hai speso', 'spent', 'addebit', 'debited', 'prelievo', 'prelevat', 'withdraw',
   'acquisto', 'purchase', 'hai inviato', 'you sent', 'inviato', 'bonifico in uscita', 'in uscita', 'transazione', 'spesa', 'charged',
+  'utilizzo carta', 'utilizzo della carta', 'autorizzato utilizzo',
 ];
 
-const _strongVerbs = ['pagat', 'paid', 'addebit', 'accredit', 'ricevut', 'received', 'hai speso', 'spent', 'prelievo'];
+const _strongVerbs = [
+  'pagat', 'paid', 'addebit', 'accredit', 'ricevut', 'received', 'hai speso', 'spent', 'prelievo', 'utilizzo carta', 'autorizzato utilizzo',
+];
 
 bool _any(String f, List<String> words) => words.any(f.contains);
 
@@ -209,17 +219,18 @@ const _genericTitles = [
 ];
 
 String _merchant(String title, String body, _Money? amt, NotifKind kind) {
-  // nel testo, dopo l'importo: "presso X", "at X", "da X", "a X"
+  // nel testo, dopo l'importo: "presso X", "at X", "da X", "a X", "per: X" (SMS Fineco)
   final after = amt != null ? body.substring(math.min(body.length, amt.end)) : body;
   final rels = kind == NotifKind.income || kind == NotifKind.transfer
-      ? [r'\b(?:da|dal|dalla|from)\s+', r'\b(?:presso|at|c/o)\s+']
+      ? [r'\b(?:da|dal|dalla|from):?\s+', r'\b(?:presso|at|c/o):?\s+']
       : kind == NotifKind.invest
           ? [r'\b(?:in|su|di|of)\s+']
-          : [r'\b(?:presso|at|c/o|da)\s+', r'\b(?:a favore di|a|to|per|verso)\s+'];
+          : [r'\b(?:presso|at|c/o|da):?\s+', r'\b(?:a favore di|a|to|per|verso):?\s+'];
   for (final src in kind == NotifKind.invest ? [after] : [after, body]) {
-    for (final r in rels) {
-      final m = RegExp('$r(.+)', caseSensitive: false).firstMatch(src);
-      if (m == null) continue;
+    // vince la parola che viene prima: in "per: BAR DA MARIO" il nome è tutto
+    final hits = [for (final r in rels) RegExp('$r(.+)', caseSensitive: false).firstMatch(src)].nonNulls.toList()
+      ..sort((a, b) => a.start.compareTo(b.start));
+    for (final m in hits) {
       final n = _cleanName(m[1]!);
       if (n.isNotEmpty) return n;
     }
@@ -288,7 +299,7 @@ NotifKind? _nearestBefore(String f, int pos) {
 }
 
 ParsedNotif parseBankNotif(BankNotif n) {
-  final bank = bankOf(n.pkg);
+  final bank = n.bank;
   // un solo testo: titolo, corpo e sottotesto (il titolo spesso è l'esercente)
   final body = [n.body, if (n.sub.isNotEmpty && !n.body.contains(n.sub)) n.sub].join(' · ');
   final full = '${n.title} · $body';

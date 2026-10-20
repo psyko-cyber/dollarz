@@ -76,8 +76,8 @@ class LocalPrefs extends ChangeNotifier {
   int get lockedUntil => get<int>('lockedUntil') ?? 0;
   set lockedUntil(int v) => set('lockedUntil', v);
 
-  /// Android: niente screenshot e anteprima nascosta nelle app recenti.
-  bool get secureScreen => get<bool>('secureScreen') ?? true;
+  /// Android: niente screenshot e anteprima nascosta nelle app recenti (spenta di base).
+  bool get secureScreen => get<bool>('secureScreen') ?? false;
   set secureScreen(bool v) => set('secureScreen', v);
 
   /// Importi nascosti in home (per quando c'è gente intorno).

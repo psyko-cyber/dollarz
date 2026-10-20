@@ -31,6 +31,7 @@ class BankBridge extends ChangeNotifier {
       }
       return null;
     });
+    await setSecure(app.prefs.secureScreen);
     await pushApps();
     await checkAccess();
     await drain();

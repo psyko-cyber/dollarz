@@ -22,8 +22,7 @@ class MainActivity : FlutterFragmentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // dati finanziari: niente anteprima nelle app recenti e niente screenshot
-        window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
+        // screenshot consentiti: la schermata protetta (FLAG_SECURE) la accende l'app se l'utente la vuole
         if (savedInstanceState == null) handleShare(intent)
     }
 

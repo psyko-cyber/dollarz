@@ -134,7 +134,6 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
 
   Future<void> _startup() async {
     final app = context.appRead;
-    unawaited(Services.bank.setSecure(app.prefs.secureScreen));
     app.matchScheduled();
     app.updateSnapshot();
     _onShared();

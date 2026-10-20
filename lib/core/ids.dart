@@ -17,6 +17,6 @@ bool get isWindows => !kIsWeb && Platform.isWindows;
 bool get isDesktop => !kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS);
 bool get isMobile => !kIsWeb && (Platform.isAndroid || Platform.isIOS);
 
-const appVersion = '1.0.0';
-const appBuild = 1;
+const appVersion = '1.0.1';
+const appBuild = 2;
 const githubRepo = 'psyko-cyber/dollarz';

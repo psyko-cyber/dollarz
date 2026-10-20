@@ -393,6 +393,18 @@ void main() {
       final pac = p('de.traderepublic.app', 'Piano di accumulo', 'Il tuo piano di accumulo da 50,00 € è stato eseguito');
       expect(pac.amount, -5000);
     });
+    test('SMS Fineco dall\'app dei messaggi', () {
+      // formato degli SMS di Fineco, con valori inventati
+      final r = p('com.google.android.apps.messaging', 'Fineco',
+          'Fineco - SMS Gratuito: Autorizzato utilizzo Carta ***1234 Importo: 3,5 EUR, per: BAR DA ESEMPIO. Info: 0200000000');
+      expect(r.bank, 'fineco');
+      expect(r.kind, NotifKind.expense);
+      expect(r.amount, -350);
+      expect(r.merchant, 'BAR DA ESEMPIO');
+      expect(r.autoAdd, true);
+      expect(bankOf('com.google.android.apps.messaging', 'Un amico'), 'altro');
+      expect(bankOf('com.android.mms', 'FinecoBank'), 'fineco');
+    });
     test('da scartare', () {
       expect(p('com.revolut.revolut', 'Revolut', 'Il tuo codice è 123456').ignored, true);
       expect(p('com.revolut.revolut', 'Pagamento rifiutato', 'Pagamento di 20,00 € rifiutato').ignored, true);
