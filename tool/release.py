@@ -4,6 +4,7 @@ Uso (da dollarz/):
   python tool/release.py 1.0.0            versione nei file, analyze, test, APK, Windows, installer,
                                           SHA256SUMS, controllo di firma e versione
   python tool/release.py 1.0.0 --no-test  come sopra senza analyze e test (già fatti)
+  python tool/release.py --installa       copia APK e setup di dist/ in ../_Installa, al posto dei vecchi
   python tool/release.py --clean          ferma Gradle, chiude i java delle build, cancella le cartelle di build
 
 Con la versione già scritta nei file ricompila senza toccarli; con una nuova alza anche il numero di build.
@@ -22,6 +23,7 @@ ROOT = Path(__file__).resolve().parent.parent
 JDK = r'C:\Users\Luca\dev-tools\jdk17'
 ISCC = r'C:\Users\Luca\AppData\Local\Programs\Inno Setup 6\ISCC.exe'
 CERT_SHA1 = 'bf083fb551fde690dbfee2353669ede117c9a789'  # firma di Dollarz: l'APK si installa sopra il vecchio
+INSTALLA = ROOT.parent / '_Installa'  # fuori dal repo: l'ultima versione pubblicata, pronta da installare
 BUILD_DIRS = ['build', 'dist', '.dart_tool', 'android/.gradle', 'android/.kotlin', 'windows/flutter/ephemeral']
 ENV = {**os.environ, 'JAVA_HOME': JDK}
 FLUTTER = shutil.which('flutter') or r'C:\src\flutter\bin\flutter.bat'
@@ -94,7 +96,20 @@ def prepare(version, test=True):
     print(f'firma APK {"ok" if ok_sign else "SBAGLIATA"} · versione nell\'APK {"ok" if ok_ver else "SBAGLIATA"} ({version}+{build})')
     if not (ok_sign and ok_ver):
         sys.exit('NON pubblicare')
-    print('Poi: commit e push, gh release create (../doc/rilascio.md), python tool/release.py --clean')
+    print('Poi: commit e push, gh release create (../doc/rilascio.md), python tool/release.py --installa --clean')
+
+
+def installa():
+    dist = ROOT / 'dist'
+    files = sorted(dist.glob('Dollarz-*.apk')) + sorted(dist.glob('Dollarz-Setup-*.exe'))
+    if len(files) != 2:
+        sys.exit('in dist/ servono un APK e un setup: prima python tool/release.py x.y.z')
+    INSTALLA.mkdir(exist_ok=True)
+    for old in INSTALLA.glob('Dollarz-*'):
+        old.unlink()
+    for f in files:
+        shutil.copyfile(f, INSTALLA / f.name)
+    print(f'{INSTALLA}: ' + ', '.join(f.name for f in files))
 
 
 def clean():
@@ -121,8 +136,11 @@ if __name__ == '__main__':
     # con l'output rediretto Python usa cp1252 e si ferma sul "√" di flutter build
     sys.stdout.reconfigure(encoding='utf-8', errors='replace')
     args = [a for a in sys.argv[1:] if not a.startswith('--')]
-    if '--clean' in sys.argv:
-        clean()
+    if '--installa' in sys.argv or '--clean' in sys.argv:
+        if '--installa' in sys.argv:
+            installa()
+        if '--clean' in sys.argv:
+            clean()
     elif len(args) == 1 and re.fullmatch(r'\d+\.\d+\.\d+', args[0]):
         prepare(args[0], test='--no-test' not in sys.argv)
     else:
