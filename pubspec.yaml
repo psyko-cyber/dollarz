@@ -1,0 +1,72 @@
+name: dollarz
+description: "Dollarz - finanza personale"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.13.3
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  path_provider: 2.1.6
+  http: 1.6.0
+  crypto: 3.0.7
+  cryptography: ^2.9.0
+  flutter_secure_storage: ^11.2.0
+  local_auth: ^3.0.2
+  mobile_scanner: 7.4.2
+  qr_flutter: 4.1.0
+  flutter_local_notifications: 22.3.1
+  timezone: 0.11.1
+  flutter_timezone: 5.1.0
+  window_manager: 0.5.2
+  # 0.7+ si porta dietro nativeapi (FFI) anche su Android
+  tray_manager: 0.5.2
+  url_launcher: 6.3.2
+  share_plus: 13.3.0
+  file_selector: 1.1.0
+  excel: ^4.0.6
+  fl_chart: ^1.2.0
+  ffi: 2.2.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: 0.14.4
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/brand/icon_full.png"
+  min_sdk_android: 26
+  adaptive_icon_background: "#0C1326"
+  adaptive_icon_foreground: "assets/brand/icon_fg.png"
+  adaptive_icon_monochrome: "assets/brand/icon_mono.png"
+  adaptive_icon_foreground_inset: 0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/brand/mark.png
+    - assets/brand/tray.ico
+
+  fonts:
+    - family: Sora
+      fonts:
+        - asset: assets/fonts/Sora-400.ttf
+          weight: 400
+        - asset: assets/fonts/Sora-500.ttf
+          weight: 500
+        - asset: assets/fonts/Sora-600.ttf
+          weight: 600
+        - asset: assets/fonts/Sora-700.ttf
+          weight: 700
+        - asset: assets/fonts/Sora-800.ttf
+          weight: 800
